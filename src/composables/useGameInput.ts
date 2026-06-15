@@ -5,6 +5,12 @@ export function useGameInput() {
   const store = useGameStore()
 
   function handleKeyDown(e: KeyboardEvent) {
+    if (e.code === 'KeyR') {
+      e.preventDefault()
+      store.startGame()
+      return
+    }
+
     if (store.status !== 'playing') return
 
     switch (e.code) {
@@ -23,10 +29,6 @@ export function useGameInput() {
       case 'KeyW':
         e.preventDefault()
         store.updateInput({ pedal: true })
-        break
-      case 'KeyR':
-        e.preventDefault()
-        store.startGame()
         break
     }
   }

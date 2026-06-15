@@ -18,9 +18,9 @@ function handleResize() {
 }
 
 onMounted(() => {
+  store.initGame()
   handleResize()
   window.addEventListener('resize', handleResize)
-  store.initGame()
   startRender()
 })
 

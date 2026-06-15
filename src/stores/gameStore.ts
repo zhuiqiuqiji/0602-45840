@@ -48,8 +48,12 @@ export const useGameStore = defineStore('game', () => {
   })
 
   function initGame() {
+    const currentGroundY = track.value.groundY
     bike.value = { ...DEFAULT_BIKE_STATE }
     track.value = { ...DEFAULT_TRACK_CONFIG }
+    if (currentGroundY > 0) {
+      track.value.groundY = currentGroundY
+    }
     physics.value = { ...DEFAULT_PHYSICS_CONFIG }
     status.value = 'idle'
     time.value = 0

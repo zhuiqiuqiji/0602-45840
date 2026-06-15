@@ -8,10 +8,18 @@ interface Cloud {
   speed: number
 }
 
+interface TexturePoint {
+  x: number
+  y: number
+  show: boolean
+}
+
 export function useGameRenderer(canvasRef: { value: HTMLCanvasElement | null }) {
   const store = useGameStore()
   const ctx = ref<CanvasRenderingContext2D | null>(null)
   const clouds = ref<Cloud[]>([])
+  const grassHeights = ref<number[]>([])
+  const trackTextures = ref<TexturePoint[]>([])
   let animationId: number | null = null
   let lastTime = 0
 
@@ -19,6 +27,24 @@ export function useGameRenderer(canvasRef: { value: HTMLCanvasElement | null }) 
     if (!canvasRef.value) return
     ctx.value = canvasRef.value.getContext('2d')
     initClouds()
+  }
+
+  function generateStaticTextures(width: number) {
+    grassHeights.value = []
+    for (let i = 0; i < width; i += 15) {
+      grassHeights.value.push(5 + Math.random() * 8)
+    }
+
+    trackTextures.value = []
+    for (let i = 0; i < store.track.width; i += 8) {
+      for (let j = 0; j < 25; j += 8) {
+        trackTextures.value.push({
+          x: i + Math.random() * 6,
+          y: j + Math.random() * 6,
+          show: Math.random() > 0.7,
+        })
+      }
+    }
   }
 
   function initClouds() {
@@ -38,6 +64,7 @@ export function useGameRenderer(canvasRef: { value: HTMLCanvasElement | null }) 
     canvasRef.value.width = width
     canvasRef.value.height = height
     store.track.groundY = height - 80
+    generateStaticTextures(width)
   }
 
   function updateClouds() {
@@ -82,13 +109,13 @@ export function useGameRenderer(canvasRef: { value: HTMLCanvasElement | null }) 
 
     ctx.value.strokeStyle = '#689F38'
     ctx.value.lineWidth = 2
-    for (let i = 0; i < canvasRef.value.width; i += 15) {
-      const grassHeight = 5 + Math.random() * 8
-      ctx.value.beginPath()
-      ctx.value.moveTo(i, store.track.groundY)
-      ctx.value.lineTo(i + 2, store.track.groundY - grassHeight)
-      ctx.value.stroke()
-    }
+    grassHeights.value.forEach((grassHeight, index) => {
+      const x = index * 15
+      ctx.value!.beginPath()
+      ctx.value!.moveTo(x, store.track.groundY)
+      ctx.value!.lineTo(x + 2, store.track.groundY - grassHeight)
+      ctx.value!.stroke()
+    })
   }
 
   function drawTrack() {
@@ -104,15 +131,13 @@ export function useGameRenderer(canvasRef: { value: HTMLCanvasElement | null }) 
 
     ctx.value.strokeStyle = '#A1887F'
     ctx.value.lineWidth = 1
-    for (let i = 0; i < track.width; i += 8) {
-      for (let j = 0; j < 25; j += 8) {
-        if (Math.random() > 0.7) {
-          ctx.value.beginPath()
-          ctx.value.arc(track.startX + i + Math.random() * 6, trackY + j + Math.random() * 6, 1, 0, Math.PI * 2)
-          ctx.value.stroke()
-        }
+    trackTextures.value.forEach(point => {
+      if (point.show) {
+        ctx.value!.beginPath()
+        ctx.value!.arc(track.startX + point.x, trackY + point.y, 1, 0, Math.PI * 2)
+        ctx.value!.stroke()
       }
-    }
+    })
 
     ctx.value.fillStyle = '#E53935'
     ctx.value.fillRect(track.startX - 5, trackY - 10, 5, 35)
