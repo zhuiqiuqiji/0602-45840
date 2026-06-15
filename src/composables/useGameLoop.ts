@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router'
 export function useGameLoop() {
   const store = useGameStore()
   const router = useRouter()
-  const { updatePhysics } = useGamePhysics()
+  const { updatePlayerPhysics, updateAIState } = useGamePhysics()
 
   let animationId: number | null = null
   let lastTime = 0
@@ -17,7 +17,22 @@ export function useGameLoop() {
     const deltaTime = lastTime ? Math.min((timestamp - lastTime) / 1000, 1 / 30) : 1 / 60
     lastTime = timestamp
 
-    updatePhysics(deltaTime)
+    updatePlayerPhysics(deltaTime)
+
+    store.aiOpponents.forEach((ai, index) => {
+      if (ai.isFinished) return
+      const result = updateAIState(ai.bike, ai.skill, ai.aggressiveness, deltaTime)
+      store.updateAI(index, {
+        bike: result.bike,
+        distance: result.distance,
+        isFinished: result.isFinished,
+        failReason: result.failReason,
+      })
+      if (!result.failReason) {
+        const aiTime = store.aiOpponents[index].time + deltaTime
+        store.updateAI(index, { time: aiTime })
+      }
+    })
 
     if (store.status === 'playing') {
       animationId = requestAnimationFrame(gameLoop)

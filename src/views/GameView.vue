@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import GameCanvas from '@/components/GameCanvas.vue'
 import Timer from '@/components/Timer.vue'
@@ -7,11 +7,43 @@ import Speedometer from '@/components/Speedometer.vue'
 import BalanceMeter from '@/components/BalanceMeter.vue'
 import TouchControls from '@/components/TouchControls.vue'
 import { useGameLoop } from '@/composables/useGameLoop'
+import { useGameInput } from '@/composables/useGameInput'
 import { useGameStore } from '@/stores/gameStore'
 
 const router = useRouter()
 const store = useGameStore()
 const { startGameLoop, stopGameLoop } = useGameLoop()
+useGameInput()
+
+const modeLabel = computed(() => {
+  switch (store.mode) {
+    case 'training':
+      return store.trainingType === 'balance' ? '🎯 平衡训练' : '⚡ 速度训练'
+    case 'race':
+      return '🏁 竞赛模式'
+    case 'challenge':
+      return '🏆 挑战模式'
+    case 'online':
+      return '🌐 联机模式'
+    default:
+      return '🎮 游戏中'
+  }
+})
+
+const hasAIOpponents = computed(() => store.aiOpponents.length > 0)
+
+const warningText = computed(() => {
+  if (Math.abs(store.balancePercent) > 70) {
+    return '⚠️ 注意平衡！快要倒了！'
+  }
+  if (store.zeroSpeedTime > 1) {
+    return '⚠️ 速度太慢！快踩踏板！'
+  }
+  if (store.isOutOfTrack) {
+    return '⚠️ 骑出赛道了！'
+  }
+  return ''
+})
 
 function goBack() {
   stopGameLoop()
@@ -36,6 +68,13 @@ onUnmounted(() => {
       <div class="header-stats">
         <Timer />
         <Speedometer />
+      </div>
+      <div class="header-info">
+        <div class="mode-badge">{{ modeLabel }}</div>
+        <div v-if="hasAIOpponents" class="rank-badge">
+          <span class="rank-icon">🏅</span>
+          <span class="rank-text">第 {{ store.playerRank }} / {{ store.aiOpponents.length + 1 }} 名</span>
+        </div>
       </div>
     </div>
 
@@ -72,6 +111,18 @@ onUnmounted(() => {
               <span class="hint-key">↑ / 空格</span>
               <span class="hint-label">踩踏板</span>
             </div>
+            <div class="hint-group">
+              <span class="hint-key">Q</span>
+              <span class="hint-label">左重心</span>
+            </div>
+            <div class="hint-group">
+              <span class="hint-key">E</span>
+              <span class="hint-label">右重心</span>
+            </div>
+            <div class="hint-group">
+              <span class="hint-key">R</span>
+              <span class="hint-label">重开</span>
+            </div>
           </div>
         </div>
 
@@ -79,14 +130,11 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="warning-banner" v-if="store.isWarning && store.status === 'playing'">
-      <span v-if="Math.abs(store.balancePercent) > 70" class="warning-text">
-        ⚠️ 注意平衡！快要倒了！
-      </span>
-      <span v-else-if="store.zeroSpeedTime > 1" class="warning-text">
-        ⚠️ 速度太慢！快踩踏板！
-      </span>
-    </div>
+    <Transition name="warning">
+      <div v-if="store.isWarning && store.status === 'playing' && warningText" class="warning-banner">
+        <span class="warning-text">{{ warningText }}</span>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -130,6 +178,42 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.header-info {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.mode-badge {
+  padding: 10px 18px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1b5e20;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rank-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #fff8e1, #ffecb3);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rank-icon {
+  font-size: 18px;
+}
+
+.rank-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f57c00;
 }
 
 .game-content {
@@ -222,7 +306,7 @@ onUnmounted(() => {
 .hint-row {
   display: flex;
   justify-content: center;
-  gap: 32px;
+  gap: 24px;
   flex-wrap: wrap;
 }
 
@@ -280,12 +364,27 @@ onUnmounted(() => {
   text-align: center;
 }
 
+.warning-enter-active,
+.warning-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.warning-enter-from,
+.warning-leave-to {
+  opacity: 0;
+}
+
 @media (max-width: 768px) {
   .keyboard-hints {
     display: none;
   }
 
   .header-stats {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .header-info {
     width: 100%;
     justify-content: space-between;
   }

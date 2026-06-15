@@ -30,6 +30,14 @@ export function useGameInput() {
         e.preventDefault()
         store.updateInput({ pedal: true })
         break
+      case 'KeyQ':
+        e.preventDefault()
+        store.updateInput({ leanLeft: true, shiftUp: true })
+        break
+      case 'KeyE':
+        e.preventDefault()
+        store.updateInput({ leanRight: true, shiftDown: true })
+        break
     }
   }
 
@@ -47,6 +55,12 @@ export function useGameInput() {
       case 'Space':
       case 'KeyW':
         store.updateInput({ pedal: false })
+        break
+      case 'KeyQ':
+        store.updateInput({ leanLeft: false, shiftUp: false })
+        break
+      case 'KeyE':
+        store.updateInput({ leanRight: false, shiftDown: false })
         break
     }
   }
