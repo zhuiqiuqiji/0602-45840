@@ -352,23 +352,19 @@ export function useGameRenderer(canvasRef: { value: HTMLCanvasElement | null }) 
     store.aiOpponents.forEach((ai, index) => {
       if (ai.isFinished && ai.failReason) return
 
-      const progressDiff = (ai.distance - store.distance) / 50
-      const aiX = store.bike.x + progressDiff * 30
-      const aiY = progressDiff * 15
-      const baseCenter = store.track.startX + store.track.width / 2
-      const curveOffset = getCurveOffset(ai.distance)
-      const finalX = Math.max(
-        store.track.startX + 15,
-        Math.min(
-          store.track.startX + store.track.width - 15,
-          baseCenter + curveOffset + (ai.bike.angle || 0) * 0.15
-        )
-      )
+      const distanceDiff = ai.distance - store.distance
+      const scaleFactor = 100
+      const progressDiff = distanceDiff / scaleFactor
+      const aiY = progressDiff * 20
 
-      if (progressDiff > -2 && progressDiff < 3) {
+      const drawRangeMin = -2
+      const drawRangeMax = 3
+
+      if (progressDiff > drawRangeMin && progressDiff < drawRangeMax) {
+        const yOffset = Math.min(60, Math.max(0, -progressDiff * 20))
         drawBikeGeneric(
-          finalX,
-          Math.min(60, Math.max(0, -progressDiff * 20)),
+          ai.bike.x,
+          yOffset,
           ai.bike.angle || 0,
           ai.bike,
           ai.color,
@@ -382,10 +378,10 @@ export function useGameRenderer(canvasRef: { value: HTMLCanvasElement | null }) 
         ctx.value!.font = 'bold 11px sans-serif'
         ctx.value!.textAlign = 'center'
         ctx.value!.fillStyle = ai.color
-        const labelY = store.track.groundY - 75 - Math.min(60, Math.max(0, -progressDiff * 20))
-        ctx.value!.fillText(`${ai.emoji} ${ai.name}`, finalX, labelY)
+        const labelY = store.track.groundY - 75 - yOffset
+        ctx.value!.fillText(`${ai.emoji} ${ai.name}`, ai.bike.x, labelY)
         ctx.value!.restore()
-      } else if (progressDiff >= 3) {
+      } else if (progressDiff >= drawRangeMax) {
         ctx.value!.save()
         ctx.value!.globalAlpha = 0.7
         ctx.value!.fillStyle = ai.color

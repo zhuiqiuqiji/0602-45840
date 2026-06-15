@@ -93,7 +93,7 @@ export function useGamePhysics() {
     bike.angle = Math.max(-89, Math.min(89, bike.angle))
 
     if (Math.abs(bike.angle) > physics.fallAngle) {
-      store.endGame('倒地了！倾斜角度过大')
+      store.endGame('倒地了！倾斜角度过大', false)
       return
     }
 
@@ -105,14 +105,14 @@ export function useGamePhysics() {
     const bikeWidth = 30
 
     if (bike.x - bikeWidth / 2 < leftEdge || bike.x + bikeWidth / 2 > rightEdge) {
-      store.endGame('骑出赛道边界了！')
+      store.endGame('骑出赛道边界了！', false)
       return
     }
 
     if (bike.speed < 0.1) {
       store.zeroSpeedTime += deltaTime
       if (store.zeroSpeedTime > 2) {
-        store.endGame('脚落地了！速度太慢')
+        store.endGame('脚落地了！速度太慢', false)
         return
       }
     } else {
@@ -133,7 +133,7 @@ export function useGamePhysics() {
     store.distance += bike.speed * deltaTime * 60
 
     if (store.distance >= track.length) {
-      store.endGame('完成比赛！')
+      store.endGame('完成比赛！', true)
       return
     }
 
@@ -200,6 +200,7 @@ export function useGamePhysics() {
     if (Math.abs(bike.angle) > physics.fallAngle * (0.9 + aiSkill * 0.2)) {
       failReason = '倒地'
       bike.speed = 0
+      isFinished = true
     }
 
     const curveOffset = getCurrentCurveOffset(store.distance + aiBike.x)

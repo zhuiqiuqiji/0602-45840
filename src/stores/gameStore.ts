@@ -191,14 +191,18 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  function endGame(reason: string) {
+  function endGame(reason: string, isSuccess: boolean = false) {
     status.value = 'ended'
-    failReason.value = reason
+    if (!isSuccess) {
+      failReason.value = reason
+    }
 
     aiOpponents.value.forEach(ai => {
       if (!ai.isFinished) {
         ai.isFinished = true
-        ai.failReason = '比赛结束'
+        if (!ai.failReason) {
+          ai.failReason = isSuccess ? undefined : '比赛结束'
+        }
       }
     })
 
